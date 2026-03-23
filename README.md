@@ -249,19 +249,4 @@ Adding a new condition (`C`) requires only: `conditionC_msg` field + one line in
 
 ---
 
-## Submission Checklist
-
-- [x] Web page with two A/B conditions (name + tone)
-- [x] Accept/Reject AI recommendation task (20 questions)
-- [x] Logging: `participant_id`, `condition`, `decision`, `timestamp`, `latency_ms`
-- [x] Output in CSV and JSON
-- [x] Balanced condition assignment (server-side strict alternation)
-- [x] Per-question latency measurement
-- [x] Frontend log viewer at `/logs`
-- [x] Modular documented codebase
-- [x] How to run locally
-- [x] Sample output included above
-
----
-
-*Built with Next.js 16 · TypeScript · Vanilla CSS (Refactoring to Tailwind planned) · No external database*
+*Built with Next.js 16 · TypeScript  · No external database*
