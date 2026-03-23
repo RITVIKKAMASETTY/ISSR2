@@ -155,8 +155,8 @@ The prototype features a built-in research dashboard at `http://localhost:3000/l
 - **Dual View**: Switch between a clean **Table View** and a raw **JSON Viewer**.
 - **Interactive Filters**: Filter sessions by Condition (A/B), Decision (Accept/Reject), or Highlight type.
 - **Behavioral Highlighting**: Rows are automatically color-coded to identify:
-  - 🔴 **Overtrust**: AI was wrong, but participant accepted.
-  - 🟢 **Undertrust**: AI was correct, but participant rejected.
+  -  **Overtrust**: AI was wrong, but participant accepted.
+  -  **Undertrust**: AI was correct, but participant rejected.
 - **One-Click Exports**: Dedicated buttons to download the full dataset as `data.csv` or `data.json`.
 - **Live Stats**: Summary bar showing total decisions, unique participants, and per-condition acceptance/latency rates.
 
