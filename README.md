@@ -30,7 +30,7 @@ This prototype implements a **between-subjects A/B experiment** to measure how t
 |---|---|---|
 | **Name** | `AI Assistant` | `Emma` |
 | **Tone** | Formal, probability-based | Conversational, first-person |
-| **Example** | *"74% of datasets confirm option A is faster."* | *"Hey! I'd definitely go with A — pretty sure it's the better call 😊"* |
+| **Example** | *"74% of datasets confirm option A is faster."* | *"Hey! I'd definitely go with A — pretty sure it's the better call "* |
 
 All other variables (question content, option order, layout) are held constant. This isolates the causal effect of **humanlike interface cues** on behavioral trust.
 
