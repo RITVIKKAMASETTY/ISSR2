@@ -63,7 +63,7 @@ Logs are written automatically to `logs/data.csv` and `logs/data.json`. No datab
 
 ### Request / Data Flow
 
-```
+```text
 1. Page load   → GET /api/assign
                    → reads counter.json
                    → assigns A or B (strict alternation)
@@ -74,16 +74,15 @@ Logs are written automatically to `logs/data.csv` and `logs/data.json`. No datab
 
 3. User clicks → decide("accept" | "reject")
                    → latency_ms = Date.now() - qStart
-                   → POST /api/log { participant_id, condition,
-                       question_id, decision, ai_correct,
-                       timestamp, latency_ms }
-                   → written to CSV + JSON
+                   → POST /api/log (Instant File-based fallback)
+                       → written to CSV + JSON
+                   → Event added to local memory array
 
-4. All 20 done → DoneScreen with summary stats
+4. All 20 done → POST /api/log-batch (Fire-and-forget DB write)
+                   → Writes Session + 20 DecisionEvents to Neon DB
+               → DoneScreen with summary stats
                    → link to /logs viewer
 ```
-
----
 
 ## Condition Logic — A/B Assignment
 
@@ -109,9 +108,42 @@ The counter persists in `logs/counter.json` — it survives browser resets, mult
 
 ---
 
-## Logging Implementation
+## Database & Logging Implementation
 
-### Event Schema
+### Database Schema (Neon + Prisma)
+
+The system uses a relational PostgreSQL database hosted on Neon, managed via Prisma ORM.
+
+```prisma
+// One row per completed survey session
+model Session {
+  id             Int             @id @default(autoincrement())
+  participant_id String          @unique
+  condition      String          // "A" (neutral AI) | "B" (humanlike Emma)
+  completed_at   DateTime        @default(now())
+  events         DecisionEvent[]
+}
+
+// One row per question decision (20 per session)
+model DecisionEvent {
+  id             Int      @id @default(autoincrement())
+  session        Session  @relation(fields: [participant_id], references: [participant_id])
+  participant_id String
+  condition      String   // Denormalized for rapid analytical queries
+  question_id    Int
+  decision       String   // "accept" | "reject"
+  ai_correct     Boolean
+  latency_ms     Int
+  timestamp      DateTime
+}
+```
+
+### Why Batch Logging? (Zero-Latency Strategy)
+Writing to a remote cloud database during a high-resolution cognitive task can introduce blocking network latency (50ms–200ms+ per click). To guarantee the participant experiences **zero UI latency**, the architecture splits logging:
+1. **Instant Feedback**: Individual decisions are locally cached in React state and fire-and-forgotten to local CSV/JSON.
+2. **Batch Upload**: When the 20th question is answered, the entire array of 20 events is sent to `/api/log-batch` as a single fire-and-forget HTTP request. The user is instantly shown the "Done" screen while the server safely executes the Prisma transaction in the background.
+
+### Event Schema (CSV/JSON Fallback)
 
 | Field | Type | Description |
 |---|---|---|
@@ -122,24 +154,6 @@ The counter persists in `logs/counter.json` — it survives browser resets, mult
 | `ai_correct` | boolean | Was the AI's recommendation actually correct? |
 | `timestamp` | ISO 8601 | UTC wall-clock time |
 | `latency_ms` | integer | Milliseconds from question display to click |
-
-### Logging Route
-
-```typescript
-// src/app/api/log/route.ts
-const record = { participant_id, condition, question_id,
-                 decision, ai_correct, timestamp: new Date().toISOString(), latency_ms };
-
-// CSV — append-only, header written once
-const csvExists = fs.existsSync(csvPath) && fs.statSync(csvPath).size > 0;
-await createObjectCsvWriter({ path: csvPath, append: csvExists, header: [...] })
-      .writeRecords([record]);
-
-// JSON — read-parse-push-write
-const arr = JSON.parse(fs.readFileSync(jsonPath, "utf-8") || "[]");
-arr.push(record);
-fs.writeFileSync(jsonPath, JSON.stringify(arr, null, 2));
-```
 
 ### Latency Measurement
 
@@ -240,13 +254,13 @@ Adding a new condition (`C`) requires only: `conditionC_msg` field + one line in
 | Decision | Alternative | Why |
 |---|---|---|
 | Next.js App Router | Separate React + Express | Co-located API + UI, single deployment, TypeScript throughout |
-| 20 questions | 5–10 | More stable per-participant trust rate; reduces single-question noise |
+| Neon Serverless DB | Local SQLite | Cloud-ready database scaling, zero-config connection pooling |
+| Prisma + Node pg | DB-specific SDK / raw SQL | Type-safe queries, fast schema prototyping, seamless migration |
+| Batch DB Logging | Per-click DB logging | Prevents remote DB network latency from blocking the user's UI during rapid tasks |
 | Strict alternation | Random assignment | Guarantees ≤1 group difference at any N; critical for small samples |
 | Dual CSV + JSON | JSON only | CSV opens directly in R/Excel/Python without any parsing step |
 | Server-side counter | `localStorage` | Correct for multi-user sessions; survives browser resets and server restarts |
-| Per-question latency | Session latency | Measures pure decision time, eliminates reading-speed confound |
-| Modular components | Monolithic `page.tsx` | Each component is independently testable and extensible |
 
 ---
 
-*Built with Next.js 16 · TypeScript  · No external database*
+*Built with Next.js 16 · TypeScript · Prisma · Neon PostgreSQL · Vanilla CSS *

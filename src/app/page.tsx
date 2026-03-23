@@ -58,21 +58,34 @@ export default function Home() {
       const latency_ms = Date.now() - qStart;
       const q: Question = questions[index];
 
+      // 1. Fire-and-forget individual CSV/JSON log (instant, local)
       fetch("/api/log", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ participant_id: participantId, condition, question_id: q.id, decision, ai_correct: q.ai_correct, latency_ms }),
       }).catch(console.error);
 
-      setLogs((prev) => [...prev, { question_id: q.id, decision, ai_correct: q.ai_correct, latency_ms }]);
+      // Accumulate for batch DB insert
+      const newLog = { question_id: q.id, decision, ai_correct: q.ai_correct, latency_ms, timestamp: new Date().toISOString() };
+      const updatedLogs = [...logs, newLog];
+      setLogs(updatedLogs);
 
       const next = index + 1;
-      if (next >= questions.length) { setPhase("done"); }
+      if (next >= questions.length) {
+        // 2. Survey finished — fire-and-forget batch insert to Neon DB
+        fetch("/api/log-batch", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ participant_id: participantId, condition, events: updatedLogs }),
+        }).catch(console.error);
+
+        setPhase("done");
+      }
       else { setIndex(next); setQStart(Date.now()); }
 
       setBusy(false);
     },
-    [busy, qStart, index, participantId, condition]
+    [busy, qStart, index, participantId, condition, logs]
   );
 
   // Derived stats for done screen 

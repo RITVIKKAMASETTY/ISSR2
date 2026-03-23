@@ -135,6 +135,15 @@ body::before {
 
 .rule { height: 1px; background: var(--border); margin-bottom: 32px; }
 
+/* Mobile Adjustments for Task Screen */
+@media (max-width: 600px) {
+  .vs-row { grid-template-columns: 1fr; gap: 16px; margin-bottom: 24px; }
+  .vs-chip { padding: 14px; }
+  .vs-mid { margin: -8px auto; z-index: 10; position: relative; }
+  .vs-badge { border: 2px solid var(--surface); }
+  .page-body { padding: 90px 16px 160px; }
+}
+
 .bubble {
   border-radius: var(--r-xl); background: var(--bubble-bg);
   padding: 0; margin-bottom: 40px; position: relative; overflow: hidden;
@@ -262,6 +271,17 @@ body::before {
 .stat-cell.ok   .val { color: var(--green); }
 .pid-label { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 800; margin-bottom: 8px; }
 .pid-row { background: var(--bg); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 14px; font-size: 12px; color: var(--text-2); font-family: 'JetBrains Mono', 'Fira Code', monospace; word-break: break-all; }
+
+/* Mobile Adjustments for Welcome & Done screens */
+@media (max-width: 600px) {
+  .meta-row { grid-template-columns: 1fr 1fr; }
+  .action-row { grid-template-columns: 1fr; }
+  .stats-grid { grid-template-columns: 1fr; }
+  .welcome-title { font-size: 28px; }
+  .done-title { font-size: 28px; }
+  .bubble-inner { padding: 24px; }
+  .btn { padding: 14px 16px; }
+}
 
 /* ═══════════════════════════════════════════════════════════
    GUIDE OVERLAY

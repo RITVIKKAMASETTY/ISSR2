@@ -1,0 +1,38 @@
+// This is your Prisma schema file
+// https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+
+// One row per completed survey session
+model Session {
+  id             Int             @id @default(autoincrement())
+  participant_id String          @unique
+  condition      String          // "A" (neutral AI) | "B" (humanlike Emma)
+  completed_at   DateTime        @default(now())
+  events         DecisionEvent[]
+}
+
+// One row per question decision (20 per session)
+model DecisionEvent {
+  id             Int      @id @default(autoincrement())
+  session        Session  @relation(fields: [participant_id], references: [participant_id])
+  participant_id String
+  condition      String   // denormalized for easier querying
+  question_id    Int
+  decision       String   // "accept" | "reject"
+  ai_correct     Boolean
+  timestamp      DateTime
+  latency_ms     Int
+  created_at     DateTime @default(now())
+
+  @@index([condition])
+  @@index([participant_id])
+}
