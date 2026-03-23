@@ -141,7 +141,7 @@ model DecisionEvent {
 ### Why Batch Logging? (Zero-Latency Strategy)
 Writing to a remote cloud database during a high-resolution cognitive task can introduce blocking network latency (50ms–200ms+ per click). To guarantee the participant experiences **zero UI latency**, the architecture splits logging:
 1. **Instant Feedback**: Individual decisions are locally cached in React state and fire-and-forgotten to local CSV/JSON.
-2. **Batch Upload**: When the 20th question is answered, the entire array of 20 events is sent to `/api/log-batch` as a single fire-and-forget HTTP request. The user is instantly shown the "Done" screen while the server safely executes the Prisma transaction in the background.
+2. **Batch Upload**: When the last question is answered, the entire array of  events is sent to `/api/log-batch` as a single fire-and-forget HTTP request. The user is instantly shown the "Done" screen while the server safely executes the Prisma transaction in the background.
 
 ### Event Schema (CSV/JSON Fallback)
 
