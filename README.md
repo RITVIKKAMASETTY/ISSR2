@@ -59,56 +59,7 @@ Logs are written automatically to `logs/data.csv` and `logs/data.json`. No datab
 
 ## Current System Architecture
 
-```
-┌──────────────────────────────────────────────────────────┐
-│                      Browser (Client)                    │
-│                                                          │
-│  ┌────────────────────────────────────────────────────┐  │
-│  │                   page.tsx                         │  │
-│  │         (state orchestrator, ~130 lines)           │  │
-│  │                                                    │  │
-│  │  ┌──────────────┐  ┌───────────────────────────┐  │  │
-│  │  │ WelcomeScreen│  │      TASK PHASE            │  │  │
-│  │  │ DoneScreen   │  │  GuideOverlay (Q1 only)   │  │  │
-│  │  └──────────────┘  │  TaskHeader + ProgressBar │  │  │
-│  │                    │  OptionsRow (A vs B)       │  │  │
-│  │                    │  AIBubble (cue display)    │  │  │
-│  │                    │  ActionBar (Accept/Reject) │  │  │
-│  │                    └───────────────────────────┘  │  │
-│  └────────────────────────────────────────────────────┘  │
-│                                                          │
-│  ┌────────────────────────────────────────────────────┐  │
-│  │               /logs viewer page                    │  │
-│  │   Summary stats · Table view · JSON raw view       │  │
-│  │   Download CSV · Download JSON · Copy JSON         │  │
-│  └────────────────────────────────────────────────────┘  │
-└──────────────────────────────────────────────────────────┘
-                           │  HTTP
-                           │
-┌──────────────────────────▼───────────────────────────────┐
-│               Next.js App Router (Server)                │
-│                                                          │
-│  GET /api/assign  →  reads logs/counter.json             │
-│                      returns { participantId, condition }│
-│                      increments + saves counter          │
-│                                                          │
-│  POST /api/log    →  validates required fields           │
-│                      appends to logs/data.csv            │
-│                      appends to logs/data.json           │
-│                                                          │
-│  GET /api/logs    →  reads both files                    │
-│                      returns { csv: string, json: [] }   │
-└──────────────────────────┬───────────────────────────────┘
-                           │  fs (Node.js)
-                           │
-┌──────────────────────────▼───────────────────────────────┐
-│                    File System (logs/)                   │
-│                                                          │
-│   counter.json   ← persistent A/B assignment counter    │
-│   data.csv       ← append-only, one row per decision    │
-│   data.json      ← append-only JSON array               │
-└──────────────────────────────────────────────────────────┘
-```
+![System Architecture](public/sa.png)
 
 ### Request / Data Flow
 
@@ -198,16 +149,16 @@ fs.writeFileSync(jsonPath, JSON.stringify(arr, null, 2));
 
 ## Logs Viewer
 
-Navigate to **http://localhost:3000/logs** after completing a session.
+The prototype features a built-in research dashboard at `http://localhost:3000/logs`.
 
-| Feature | Details |
-|---|---|
-| **Summary bar** | Total decisions, participants, Accept Rate A vs B, Avg Latency A vs B |
-| **Table view** | All rows, color-coded (🔴 overtrust, 🟢 undertrust) |
-| **JSON view** | Raw JSON with one-click copy |
-| **Downloads** | `↓ CSV` and `↓ JSON` buttons in the header |
-
-Overtrust = accepted AI when AI was wrong. Undertrust = rejected AI when AI was correct. These are the primary behavioral metrics for the study.
+### Key Features:
+- **Dual View**: Switch between a clean **Table View** and a raw **JSON Viewer**.
+- **Interactive Filters**: Filter sessions by Condition (A/B), Decision (Accept/Reject), or Highlight type.
+- **Behavioral Highlighting**: Rows are automatically color-coded to identify:
+  - 🔴 **Overtrust**: AI was wrong, but participant accepted.
+  - 🟢 **Undertrust**: AI was correct, but participant rejected.
+- **One-Click Exports**: Dedicated buttons to download the full dataset as `data.csv` or `data.json`.
+- **Live Stats**: Summary bar showing total decisions, unique participants, and per-condition acceptance/latency rates.
 
 ---
 
@@ -313,4 +264,4 @@ Adding a new condition (`C`) requires only: `conditionC_msg` field + one line in
 
 ---
 
-*Built with Next.js 16 · TypeScript · Vanilla CSS · No external database*
+*Built with Next.js 16 · TypeScript · Vanilla CSS (Refactoring to Tailwind planned) · No external database*
